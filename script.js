@@ -1,3 +1,16 @@
+// --- 0. Global Interactions ---
+function loadExample() {
+    document.getElementById('grammar-input').value = "E -> E + E | E * E | id";
+    document.getElementById('string-input').value = "id + id * id";
+
+    // Small feedback ripple on elements
+    const inputs = [document.getElementById('grammar-input'), document.getElementById('string-input')];
+    inputs.forEach(el => {
+        el.style.transform = "scale(1.02)";
+        setTimeout(() => el.style.transform = "scale(1)", 200);
+    });
+}
+
 // Setup global tooltip for D3
 const tooltip = d3.select("body").append("div")
     .attr("class", "d3-tooltip")
@@ -173,24 +186,28 @@ function renderTreeWithD3(treeDataArray, isPlaying = false) {
         const maxDepth = d3.max(root.descendants(), d => d.depth);
         if (maxDepth > maxDepthGlobal) maxDepthGlobal = maxDepth;
 
-        // Render Edges
+        // Render Edges Actively
         svg.selectAll(".link")
             .data(root.links())
             .enter().append("path")
             .attr("class", "link")
             .attr("fill", "none")
-            .attr("stroke", "#94a3b8")
+            .attr("stroke", "rgba(255,255,255,0.15)")
             .attr("stroke-width", 2)
-            .attr("d", d => {
-                const parentPos = { x: d.source.x, y: d.source.y };
-                return d3.linkVertical().x(p => p.x).y(p => p.y)({ source: parentPos, target: parentPos });
+            .attr("d", d3.linkVertical().x(d => d.x).y(d => d.y))
+            .attr("stroke-dasharray", function () {
+                const length = this.getTotalLength() || 1000;
+                return length + " " + length;
+            })
+            .attr("stroke-dashoffset", function () {
+                return this.getTotalLength() || 1000;
             })
             .transition()
-            .duration(duration)
+            .duration(duration * 1.5)
             .ease(d3.easeCubicOut)
             // Stagger based on PARENT depth
             .delay(d => d.source.depth * levelDelay)
-            .attr("d", d3.linkVertical().x(d => d.x).y(d => d.y));
+            .attr("stroke-dashoffset", 0);
 
         // Render Nodes
         const node = svg.selectAll(".node")
@@ -239,6 +256,7 @@ function renderTreeWithD3(treeDataArray, isPlaying = false) {
             .attr("opacity", 1);
 
         node.append("circle")
+            .attr("class", "node-float shadow-inner")
             .attr("r", 18)
             .attr("fill", d => {
                 if (d.children) return "#38bdf8";
@@ -324,12 +342,16 @@ function runAnalysis() {
         currentParseTrees = uniqueTrees; // Store globally for the play button
 
         if (uniqueTrees.length === 0) {
-            badge.className = "px-4 py-2 rounded-lg font-bold text-sm bg-red-500/10 text-red-400 border border-red-500/30 glow-yellow";
+            badge.className = "px-4 py-2 rounded-full font-bold text-sm bg-red-500/10 text-red-400 border border-red-500/30 glow-red";
             badge.innerHTML = "INVALID STRING ⚠️";
             container.innerHTML = `
-                <div class="flex flex-col items-center text-red-400/80 p-8 glass-card rounded-2xl">
-                    <span class="text-4xl mb-3">🚫</span>
-                    <p class="font-medium">String cannot be derived from this grammar.</p>
+                <div class="flex flex-col items-center justify-center p-8 bg-[#ef4444]/5 glow-red rounded-2xl border border-red-500/20 max-w-md w-full shadow-lg">
+                    <span class="text-4xl mb-4 block opacity-80">🚫</span>
+                    <h3 class="text-red-400 font-bold text-lg mb-2">Invalid Input</h3>
+                    <ul class="text-red-400/80 text-sm space-y-1 text-left list-disc list-inside">
+                        <li>Check spacing (tokens must be space-separated)</li>
+                        <li>Ensure tokens match grammar definitions exactly</li>
+                    </ul>
                 </div>`;
         }
         else if (uniqueTrees.length === 1) {
@@ -365,13 +387,15 @@ function fixAmbiguity() {
         isPatternMatched = true;
         suggestionHTML = `
             <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 font-mono text-sky-300 leading-relaxed shadow-inner">
-                E -> E + T | T<br>
-                T -> T * F | F<br>
-                F -> ( E ) | id
+                <span class="text-green-400 font-bold tracking-wide">E -> E + T | T</span><br>
+                <span class="text-green-400 font-bold tracking-wide">T -> T * F | F</span><br>
+                <span class="text-green-400 font-bold tracking-wide">F -> ( E ) | id</span>
             </div>
-            <p class="text-slate-400 mt-3 text-sm leading-relaxed p-1">
-                This resolves ambiguity by enforcing operator precedence and associativity.
-            </p>
+            <ul class="text-slate-300 space-y-1 mt-4 bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 text-sm shadow-inner">
+                <li><span class="text-green-400 font-bold mr-1">✔</span> Converted using operator precedence</li>
+                <li><span class="text-green-400 font-bold mr-1">✔</span> '*' has higher precedence than '+'</li>
+                <li><span class="text-green-400 font-bold mr-1">✔</span> Left associativity enforced</li>
+            </ul>
             <button onclick="useAndVerify()" 
                 class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold py-2.5 px-4 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:shadow-[0_0_25px_rgba(34,197,94,0.5)] transform transition-all active:scale-95 focus:outline-none mt-4 flex items-center justify-center gap-2">
                 <span>🔄</span> Use & Verify
