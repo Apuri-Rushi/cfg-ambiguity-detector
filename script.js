@@ -16,14 +16,14 @@ function parseGrammar(rawText) {
     for (const line of lines) {
         const trimmed = line.trim();
         if (!trimmed) continue;
-        
+
         const parts = trimmed.split('->');
         if (parts.length !== 2) continue;
 
         const lhs = parts[0].trim();
-        if (!startSymbol) startSymbol = lhs; 
+        if (!startSymbol) startSymbol = lhs;
 
-        const rhsList = parts[1].split('|').map(s => 
+        const rhsList = parts[1].split('|').map(s =>
             s.trim().split(/\s+/).filter(token => token.length > 0)
         );
 
@@ -36,11 +36,11 @@ function parseGrammar(rawText) {
 // --- 2. Tree Generation Logic (Optimized + Fixed for Nesting) ---
 function generateTrees(grammarInfo, tokens) {
     const { rules, startSymbol } = grammarInfo;
-    const MAX_DEPTH = 12; 
-    
+    const MAX_DEPTH = 12;
+
     const validParseTrees = [];
-    const seenTrees = new Set(); 
-    const memo = {}; 
+    const seenTrees = new Set();
+    const memo = {};
 
     function match(symbol, start, end, depth) {
         if (validParseTrees.length >= 2) return [];
@@ -49,14 +49,14 @@ function generateTrees(grammarInfo, tokens) {
 
         const remainingInput = tokens.slice(start, end).join(" ");
         const memoKey = `${symbol}|${remainingInput}`;
-        
+
         if (memo[memoKey] !== undefined) return memo[memoKey];
 
         if (!rules[symbol]) {
             if (start + 1 === end && tokens[start] === symbol) {
                 return [{ name: symbol }];
             }
-            return []; 
+            return [];
         }
 
         const results = [];
@@ -66,10 +66,10 @@ function generateTrees(grammarInfo, tokens) {
             if (validParseTrees.length >= 2) break;
 
             const subTreesOptions = matchSequence(rhs, 0, start, end, depth + 1);
-            
+
             for (const children of subTreesOptions) {
                 if (validParseTrees.length >= 2) break;
-                
+
                 const node = { name: symbol, children };
                 results.push(node);
 
@@ -78,8 +78,8 @@ function generateTrees(grammarInfo, tokens) {
                     if (!seenTrees.has(treeString)) {
                         seenTrees.add(treeString);
                         validParseTrees.push(node);
-                        
-                        if (validParseTrees.length >= 2) return results; 
+
+                        if (validParseTrees.length >= 2) return results;
                     }
                 }
             }
@@ -110,12 +110,12 @@ function generateTrees(grammarInfo, tokens) {
         const results = [];
         const maxTokensToConsume = availableTokens - (symbolsLeft - 1);
         const maxI = start + maxTokensToConsume;
-        
+
         for (let i = start + 1; i <= maxI; i++) {
             if (validParseTrees.length >= 2) break;
 
             const leftOptions = match(currentSymbol, start, i, depth);
-            
+
             if (leftOptions.length > 0) {
                 const rightOptions = matchSequence(rhs, rhsIndex + 1, i, end, depth);
                 for (const L of leftOptions) {
@@ -130,13 +130,13 @@ function generateTrees(grammarInfo, tokens) {
     }
 
     match(startSymbol, 0, tokens.length, 0);
-    return validParseTrees; 
+    return validParseTrees;
 }
 
 // --- 3. D3.js Visualization Logic (With Step-by-Step Play) ---
 function renderTreeWithD3(treeDataArray, isPlaying = false) {
     const container = document.getElementById('tree-container');
-    container.innerHTML = ''; 
+    container.innerHTML = '';
 
     if (!treeDataArray || treeDataArray.length === 0) return 0;
 
@@ -161,12 +161,12 @@ function renderTreeWithD3(treeDataArray, isPlaying = false) {
             .attr("transform", `translate(${margin.left},${margin.top})`);
 
         const root = d3.hierarchy(treeData);
-        
+
         const treeLayout = d3.tree().size([
-            width - margin.left - margin.right, 
+            width - margin.left - margin.right,
             height - margin.top - margin.bottom
         ]);
-        
+
         treeLayout(root);
 
         // Find max depth to calculate total animation time
@@ -179,7 +179,7 @@ function renderTreeWithD3(treeDataArray, isPlaying = false) {
             .enter().append("path")
             .attr("class", "link")
             .attr("fill", "none")
-            .attr("stroke", "rgba(255, 255, 255, 0.15)")
+            .attr("stroke", "#94a3b8")
             .attr("stroke-width", 2)
             .attr("d", d => {
                 const parentPos = { x: d.source.x, y: d.source.y };
@@ -201,33 +201,33 @@ function renderTreeWithD3(treeDataArray, isPlaying = false) {
             .attr("opacity", 0);
 
         // Hover Interactions
-        node.on("mouseover", function(event, d) {
+        node.on("mouseover", function (event, d) {
             d3.select(this).select("circle")
                 .transition().duration(200)
                 .attr("transform", "scale(1.15)")
                 .attr("stroke", "#fff");
-                
+
             tooltip.transition().duration(200)
                 .style("opacity", 1)
                 .style("transform", "translateY(0)");
-                
-            tooltip.html(d.children 
-                ? `<span class="text-cyan-400 font-bold">Non-terminal:</span> ${d.data.name}` 
+
+            tooltip.html(d.children
+                ? `<span class="text-sky-400 font-bold">Non-terminal:</span> ${d.data.name}`
                 : `<span class="text-green-400 font-bold">Terminal:</span> ${d.data.name}`
             )
-            .style("left", (event.pageX + 15) + "px")
-            .style("top", (event.pageY - 20) + "px");
+                .style("left", (event.pageX + 15) + "px")
+                .style("top", (event.pageY - 20) + "px");
         })
-        .on("mouseout", function() {
-            d3.select(this).select("circle")
-                .transition().duration(200)
-                .attr("transform", "scale(1)")
-                .attr("stroke", "rgba(255,255,255,0.2)");
-                
-            tooltip.transition().duration(200)
-                .style("opacity", 0)
-                .style("transform", "translateY(10px)");
-        });
+            .on("mouseout", function () {
+                d3.select(this).select("circle")
+                    .transition().duration(200)
+                    .attr("transform", "scale(1)")
+                    .attr("stroke", "rgba(255,255,255,0.2)");
+
+                tooltip.transition().duration(200)
+                    .style("opacity", 0)
+                    .style("transform", "translateY(10px)");
+            });
 
         // Animate Nodes in
         node.transition()
@@ -240,7 +240,11 @@ function renderTreeWithD3(treeDataArray, isPlaying = false) {
 
         node.append("circle")
             .attr("r", 18)
-            .attr("fill", d => d.children ? "rgba(14, 165, 233, 0.8)" : "rgba(34, 197, 94, 0.8)")
+            .attr("fill", d => {
+                if (d.children) return "#38bdf8";
+                if (["+", "*", "-", "/"].includes(d.data.name)) return "#7dd3fc";
+                return "#22c55e";
+            })
             .attr("stroke", "rgba(255,255,255,0.2)")
             .attr("stroke-width", 2)
             .style("backdrop-filter", "blur(4px)");
@@ -250,7 +254,7 @@ function renderTreeWithD3(treeDataArray, isPlaying = false) {
             .attr("text-anchor", "middle")
             .attr("class", "text-sm font-extrabold fill-white pointer-events-none drop-shadow-md")
             .text(d => d.data.name);
-            
+
         d3.select(wrapper).append("div")
             .attr("class", "absolute top-3 left-4 text-[10px] font-bold text-slate-400/50 uppercase tracking-widest")
             .text(`Derivation ${index + 1}`);
@@ -263,15 +267,15 @@ function renderTreeWithD3(treeDataArray, isPlaying = false) {
 // --- Trigger Step-by-Step Play ---
 function playDerivation() {
     if (isAnimating || currentParseTrees.length === 0) return;
-    
+
     isAnimating = true;
     const playBtn = document.getElementById('play-btn');
     playBtn.disabled = true;
     playBtn.innerHTML = `<span class="animate-pulse">⏳ Playing derivation...</span>`;
-    
+
     // Re-render the tree with step-by-step delays active
     const totalTime = renderTreeWithD3(currentParseTrees, true);
-    
+
     // Reset UX after animation completes
     setTimeout(() => {
         isAnimating = false;
@@ -287,12 +291,19 @@ function runAnalysis() {
     const badge = document.getElementById('result-badge');
     const container = document.getElementById('tree-container');
     const playBtn = document.getElementById('play-btn');
+    const fixBtn = document.getElementById('fix-ambiguity-btn');
+    const suggestionBox = document.getElementById('suggestion-box');
 
     const grammarInfo = parseGrammar(grammarInput);
     const tokens = stringInput.trim().split(/\s+/).filter(x => x);
 
     badge.className = "px-4 py-2 rounded-lg font-bold text-sm bg-slate-800 border border-slate-700 transition-all duration-300";
     playBtn.style.display = "none"; // Hide play button while processing
+    if (fixBtn) fixBtn.style.display = "none"; // Hide fix button at start
+    if (suggestionBox) {
+        suggestionBox.classList.add('hidden', 'opacity-0', 'scale-95');
+        suggestionBox.classList.remove('opacity-100', 'scale-100');
+    }
 
     if (tokens.length === 0 || !grammarInfo.startSymbol) {
         badge.classList.add("text-yellow-400", "glow-yellow");
@@ -302,12 +313,12 @@ function runAnalysis() {
 
     container.innerHTML = `
         <div class="flex flex-col items-center justify-center space-y-4 opacity-0 transition-opacity duration-300" id="loading-state">
-            <div class="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin shadow-[0_0_15px_rgba(6,182,212,0.5)]"></div>
-            <p class="text-cyan-400 font-medium tracking-wide drop-shadow-md">Constructing Syntax Trees...</p>
+            <div class="w-10 h-10 border-4 border-sky-400 border-t-transparent rounded-full animate-spin shadow-[0_0_15px_rgba(56,189,248,0.5)]"></div>
+            <p class="text-sky-400 font-medium tracking-wide drop-shadow-md">Constructing Syntax Trees...</p>
         </div>
     `;
     requestAnimationFrame(() => document.getElementById('loading-state').style.opacity = '1');
-    
+
     setTimeout(() => {
         const uniqueTrees = generateTrees(grammarInfo, tokens);
         currentParseTrees = uniqueTrees; // Store globally for the play button
@@ -320,18 +331,95 @@ function runAnalysis() {
                     <span class="text-4xl mb-3">🚫</span>
                     <p class="font-medium">String cannot be derived from this grammar.</p>
                 </div>`;
-        } 
+        }
         else if (uniqueTrees.length === 1) {
             badge.className = "px-4 py-2 rounded-lg font-bold text-sm bg-green-500/20 text-green-300 border border-green-500/50 glow-green";
             badge.innerHTML = "UNAMBIGUOUS ✅";
             playBtn.style.display = "flex"; // Show play button
             renderTreeWithD3(uniqueTrees);
-        } 
+        }
         else {
             badge.className = "px-4 py-2 rounded-lg font-bold text-sm bg-red-500/20 text-red-300 border border-red-500/50 glow-red";
             badge.innerHTML = `AMBIGUOUS ❌ <span class="ml-2 bg-red-500/30 px-2 py-0.5 rounded-full text-xs">${uniqueTrees.length} Trees</span>`;
             playBtn.style.display = "flex"; // Show play button
+            if (fixBtn) fixBtn.style.display = "block"; // Show fix ambiguity button
             renderTreeWithD3(uniqueTrees);
         }
     }, 400); // 400ms delay to let the loading state be perceived
+}
+
+// --- 5. Fix Ambiguity Feature ---
+function fixAmbiguity() {
+    const grammarInput = document.getElementById('grammar-input').value;
+    const suggestionBox = document.getElementById('suggestion-box');
+    const suggestionContent = document.getElementById('suggestion-content');
+
+    // Normalize string for simpler matching (remove all spaces)
+    const normalized = grammarInput.replace(/\s+/g, '');
+
+    let isPatternMatched = false;
+    let suggestionHTML = '';
+
+    // Pattern Detection for E -> E + E | E * E
+    if (normalized.includes('E+E') && normalized.includes('E*E')) {
+        isPatternMatched = true;
+        suggestionHTML = `
+            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 font-mono text-sky-300 leading-relaxed shadow-inner">
+                E -> E + T | T<br>
+                T -> T * F | F<br>
+                F -> ( E ) | id
+            </div>
+            <p class="text-slate-400 mt-3 text-sm leading-relaxed p-1">
+                This resolves ambiguity by enforcing operator precedence and associativity.
+            </p>
+            <button onclick="useAndVerify()" 
+                class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold py-2.5 px-4 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:shadow-[0_0_25px_rgba(34,197,94,0.5)] transform transition-all active:scale-95 focus:outline-none mt-4 flex items-center justify-center gap-2">
+                <span>🔄</span> Use & Verify
+            </button>
+        `;
+    }
+
+    if (isPatternMatched) {
+        suggestionContent.innerHTML = suggestionHTML;
+    } else {
+        suggestionContent.innerHTML = `
+            <p class="text-yellow-400/90 italic bg-yellow-500/10 p-3 rounded-xl border border-yellow-500/20 shadow-inner">
+                This system currently supports ambiguity fixing for common expression grammars only.
+            </p>
+        `;
+    }
+
+    if (suggestionBox) {
+        suggestionBox.classList.remove('hidden');
+        // Force reflow to enable transition from hidden state
+        void suggestionBox.offsetWidth;
+        suggestionBox.classList.remove('opacity-0', 'scale-95');
+        suggestionBox.classList.add('opacity-100', 'scale-100');
+    }
+}
+
+// --- 6. Use & Verify Workflow ---
+function useAndVerify() {
+    const grammarInput = document.getElementById('grammar-input');
+
+    // Replace grammar with unambiguous version
+    grammarInput.value = "E -> E + T | T\nT -> T * F | F\nF -> ( E ) | id";
+
+    // Run the analysis
+    runAnalysis();
+
+    // Smooth UX Enhancement: Override the loading text
+    const loadingState = document.getElementById('loading-state');
+    if (loadingState) {
+        const textElement = loadingState.querySelector('p');
+        if (textElement) {
+            textElement.textContent = "Verifying suggested grammar...";
+        }
+    }
+
+    // Smooth scroll to the visualization section
+    const container = document.getElementById('tree-container');
+    if (container) {
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
