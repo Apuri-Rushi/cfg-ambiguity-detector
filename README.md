@@ -37,13 +37,13 @@ An interactive web-based simulation that detects ambiguity in Context-Free Gramm
 
 ## 🌐 Live Demo
 
-https://your-vercel-link.vercel.app
+https://cfg-ambiguity-detector.vercel.app/
 
 ---
 
 ## 🎥 Demo Video
 
-https://your-video-link
+https://drive.google.com/file/d/10011Xt3MEt9yThoiYd2F5L3bG-mw9UMp/view?usp=sharing
 
 ---
 
